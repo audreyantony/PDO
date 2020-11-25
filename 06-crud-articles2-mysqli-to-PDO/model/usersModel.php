@@ -10,10 +10,10 @@ function connectUser($connect,$login,$pwd){
     INNER JOIN droit d 
 		ON d.iddroit = u.droit_iddroit
     WHERE u.thename='$login' AND u.thepwd='$pwd';";
-    $recup = mysqli_query($connect,$sql) or die(mysqli_error($connect));
+    $recup = $connect->query($sql) or die(mysqli_error($connect));
 
-    if(mysqli_num_rows($recup)){
-        return mysqli_fetch_assoc($recup);
+    if($recup->rowCount()){
+        return $recup->fetch(PDO::FETCH_ASSOC);
     }else{
         return false;
     }
@@ -23,6 +23,6 @@ function connectUser($connect,$login,$pwd){
 // find all user (Rédacteur and administateur)
 function AllUser($c){
     $sql="SELECT idusers, thename FROM users ORDER BY thename ASC;";
-    $request = mysqli_query($c,$sql);
-    return mysqli_fetch_all($request,MYSQLI_ASSOC);
+    $request = $c->query($sql);
+    return $request->fetchAll(PDO::FETCH_ASSOC);
 }

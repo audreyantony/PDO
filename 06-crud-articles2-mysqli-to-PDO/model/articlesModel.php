@@ -5,11 +5,11 @@ function articlesLoadAll($cdb){
 	INNER JOIN users u 
 		ON a.users_idusers = u.idusers
 ORDER BY a.thedate DESC;";
-    $recup = mysqli_query($cdb,$req);
+    $recup =  $cdb->query($req);
     // si au moins 1 résultat
-    if(mysqli_num_rows($recup)){
+    if($recup->rowCount()){
         // on utilise le fetch all car il peut y avoir plus d'un résultat
-        return mysqli_fetch_all($recup,MYSQLI_ASSOC);
+        return $recup->fetchAll(PDO::FETCH_ASSOC);
     }
     // no result
     return false;
@@ -22,11 +22,11 @@ FROM articles a
 	INNER JOIN users u 
 		ON a.users_idusers = u.idusers
 ORDER BY a.thedate DESC;";
-    $recup = mysqli_query($cdb,$req);
+    $recup = $cdb->query($req);
     // si au moins 1 résultat
-    if(mysqli_num_rows($recup)){
+    if($recup->rowCount()){
         // on utilise le fetch all car il peut y avoir plus d'un résultat
-        return mysqli_fetch_all($recup,MYSQLI_ASSOC);
+        return $recup->fetchAll(PDO::FETCH_ASSOC);
     }
     // no result
     return false;
@@ -37,8 +37,8 @@ function countAllArticles($c){
     // le count renvoie une ligne de résultat avec le nombre d'articles, utiliser la clef primaire permet d'éviter qu'il compte réellement le nombre d'articles: c'est un résultat se trouvant en début du code de la table (dans l'index)
     $req = "SELECT COUNT(idarticles) AS nb
 FROM articles";
-    $recup = mysqli_query($c,$req);
-    $out = mysqli_fetch_assoc($recup);
+    $recup = $c->query($req);
+    $out = $recup->fetch(PDO::FETCH_ASSOC);
     return $out["nb"];
 }
 
@@ -52,11 +52,11 @@ FROM articles a
 		ON a.users_idusers = u.idusers
 ORDER BY a.thedate DESC 
 LIMIT $begin, $nbperpage;";
-    $recup = mysqli_query($cdb,$req);
+    $recup = $cdb->query($req);
     // si au moins 1 résultat
-    if(mysqli_num_rows($recup)){
+    if($recup->rowCount()){
         // on utilise le fetch all car il peut y avoir plus d'un résultat
-        return mysqli_fetch_all($recup,MYSQLI_ASSOC);
+        return $recup->fetchAll(PDO::FETCH_ASSOC);
     }
     // no result
     return false;
@@ -69,11 +69,11 @@ function articleLoadFull($connect,$id){
 	INNER JOIN users u 
 		ON a.users_idusers = u.idusers
     WHERE a.idarticles=$id";
-    $recup = mysqli_query($connect,$req);
+    $recup = $connect->query($req);
     // si on a 1 résultat
-    if(mysqli_num_rows($recup)){
+    if($recup->rowCount()){
         // on utilise le fetch all car il peut y avoir plus d'un résultat
-        return mysqli_fetch_assoc($recup);
+        return $recup->fetch(PDO::FETCH_ASSOC);
     }
     // no result
     return false;
@@ -82,17 +82,38 @@ function articleLoadFull($connect,$id){
 // insertion d'un nouvel article
 function insertArticle($c,$title,$text,$id){
 
-    $sql="INSERT INTO articles (titre,texte,users_idusers) VALUES ('$title','$text',$id);";
-    $request = mysqli_query($c,$sql);
-    return ($request)?true:false;
+    $sql="INSERT INTO articles (titre,texte,users_idusers) VALUES (?,?,?);";
+
+    $prepareInsert = $c->prepare($sql);
+
+    $prepareInsert->bindValue(1,$title,PDO::PARAM_STR);
+    $prepareInsert->bindValue(2,$text,PDO::PARAM_STR);
+    $prepareInsert->bindValue(3,$id,PDO::PARAM_INT);
+    $insert = $prepareInsert->execute();
+
+    if($insert){
+        return true;
+    }else{
+        return false;
+    }
 }
 
 // suppression d'un article via son ID
 
 function deleteArticle($connect,$id){
     $id = (int) $id;
-    $sql="DELETE FROM articles WHERE idarticles=$id";
-    return (@mysqli_query($connect,$sql))? true : false;
+    $sql="DELETE FROM articles WHERE idarticles= ?";
+
+    $prepareDelete = $connect->prepare($sql);
+    $prepareDelete->bindValue(1,$id,PDO::PARAM_INT);
+
+    $delete = $prepareDelete->execute();
+
+    if($delete){
+        return true;
+    }else{
+        return false;
+    }
 }
 
 /*
@@ -127,9 +148,21 @@ function updateArticle($db,$datas,$id){
     if(empty($id)||empty($idarticles)||empty($titre)||
         empty($texte)||empty($thedate)||empty($users_idusers)) return "Vos champs ne sont pas correctement remplis";
 
-    $sql ="UPDATE articles SET titre = '$titre', texte ='$texte',thedate='$thedate', users_idusers= $users_idusers WHERE idarticles = $idarticles";
+    $sql ="UPDATE articles SET titre = ?, texte = ? ,thedate= ? , users_idusers= ? WHERE idarticles = ?";
 
-   return (mysqli_query($db,$sql))? true : "Erreur inconnue lors de la modification, Veuillez recommencer";
+    $prepareUpdate = $db->prepare($sql);
 
+    $prepareUpdate->bindValue( 1, $titre,PDO::PARAM_STR);
+    $prepareUpdate->bindValue( 2, $texte,PDO::PARAM_STR);
+    $prepareUpdate->bindValue( 3, $thedate,PDO::PARAM_STR);
+    $prepareUpdate->bindValue( 4, $users_idusers,PDO::PARAM_INT);
+    $prepareUpdate->bindValue( 5, $idarticles,PDO::PARAM_STR);
 
+    $update = $prepareUpdate->execute();
+
+    if ($update){
+        return true;
+    }else{
+        return "Erreur inconnue lors de la modification, Veuillez recommencer";
+    }
 }

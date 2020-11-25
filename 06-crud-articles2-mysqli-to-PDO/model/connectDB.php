@@ -2,13 +2,16 @@
 // procedural mysqli connection
 
 function connectDB(){
-    $connect = @mysqli_connect(DB_HOST,DB_USER,DB_PWD,DB_NAME, DB_PORT);
-    // if error
-    if(mysqli_connect_errno()){
-        return false;
+    try {
+        $connection = new PDO(DB_TYPE.":host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET.";port=".DB_PORT, DB_USER, DB_PWD);
+        $connection->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
+        if ($connection){
+            return $connection;
+        }
+    }catch(PDOException $e){
+        $error = $e->getCode();
+        $error .= " : ";
+        $error .= $e->getMessage();
+        die($error);
     }
-    // change charset
-    mysqli_set_charset($connect,DB_CHARSET);
-
-    return $connect;
 }

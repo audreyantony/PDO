@@ -6,7 +6,7 @@ session_start();
 
 
 // dependencies
-require_once "config.php";
+require_once "config.php.local";
 require_once "model/connectDB.php";
 
 // DB connection
